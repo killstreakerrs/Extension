@@ -10,7 +10,7 @@ let worker: SharedWorker | null = null;
 
 type WorkerAddrMap = Record<string, string>;
 
-async function init(originURL: string): Promise<SharedWorker> {
+async function init(originURL: string, noReuse = false): Promise<SharedWorker> {
 	let sw: SharedWorker;
 
 	// Check for existing url
@@ -29,38 +29,42 @@ async function init(originURL: string): Promise<SharedWorker> {
 	let workerURL: string | null =
 		typeof workerAddr === "object" && workerAddr !== null ? workerAddr[appVersion] : null;
 
-	const ok =
-		workerURL &&
-		(await fetch(workerURL)
-			.then((res) => res.ok)
-			.catch(() => false));
-
-	// Fetch worker data
-	if (!ok) {
-		// Get the offline URL passed by the loader
-		workerURL = originURL;
-		if (!workerURL) {
-			log.error("Unable to find address to worker");
-		}
+	if (!noReuse) {
+		const ok =
+			workerURL &&
+			(await fetch(workerURL)
+				.then((res) => res.ok)
+				.catch(() => false));
 
 		// Fetch worker data
-		const data = await fetch(workerURL || "")
-			.then((r) => r.blob())
-			.catch((err) => {
-				log.error("Unable to fetch worker data", err);
-			});
-		if (!data) return Promise.reject("There was an error fetching worker data");
+		if (!ok) {
+			// Get the offline URL passed by the loader
+			workerURL = originURL;
+			if (!workerURL) {
+				log.error("Unable to find address to worker");
+			}
 
-		log.info("Received worker data", `(${data.size} bytes)`);
+			// Fetch worker data
+			const data = await fetch(workerURL || "")
+				.then((r) => r.blob())
+				.catch((err) => {
+					log.error("Unable to fetch worker data", err);
+				});
+			if (!data) return Promise.reject("There was an error fetching worker data");
 
-		// Create BLOB URL for worker & set it into local storage
-		workerURL = URL.createObjectURL(data);
-		localStorage.setItem(
-			LOCAL_STORAGE_KEYS.WORKER_ADDR,
-			JSON.stringify({ ...(workerAddr ?? {}), [appVersion]: workerURL }),
-		);
+			log.info("Received worker data", `(${data.size} bytes)`);
+
+			// Create BLOB URL for worker & set it into local storage
+			workerURL = URL.createObjectURL(data);
+			localStorage.setItem(
+				LOCAL_STORAGE_KEYS.WORKER_ADDR,
+				JSON.stringify({ ...(workerAddr ?? {}), [appVersion]: workerURL }),
+			);
+		} else {
+			log.info("Connecting to existing worker", `addr=${workerURL}`);
+		}
 	} else {
-		log.info("Connecting to existing worker", `addr=${workerURL}`);
+		workerURL = originURL;
 	}
 
 	// Connect to worker

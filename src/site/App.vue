@@ -4,6 +4,8 @@
 		<Suspense>
 			<component :is="platformComponent" v-if="platformComponent" />
 		</Suspense>
+
+		<div id="seventv-ok " />
 	</template>
 
 	<!-- Render tooltip -->
@@ -26,6 +28,10 @@ import { useFrankerFaceZ } from "@/composable/useFrankerFaceZ";
 import { fillSettings, useConfig, useSettings } from "@/composable/useSettings";
 import { useWorker } from "@/composable/useWorker";
 import Global from "./global/Global.vue";
+
+const props = defineProps<{
+	test?: boolean;
+}>();
 
 const TwitchSite = defineAsyncComponent(() => import("@/site/twitch.tv/TwitchSite.vue"));
 const YouTubeSite = defineAsyncComponent(() => import("@/site/youtube.com/YouTubeSite.vue"));
@@ -65,7 +71,7 @@ db.ready().then(async () => {
 
 // Spawn SharedWorker
 const { init, target } = useWorker();
-init(inject(SITE_WORKER_URL, ""));
+init(inject(SITE_WORKER_URL, ""), props.test);
 
 target.addEventListener("ready", () => {
 	log.info("Worker ready");

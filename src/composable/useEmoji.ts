@@ -19,7 +19,10 @@ export async function loadEmojiList() {
 	if (cached.length) return cached;
 
 	const assetsBase = inject(SITE_ASSETS_URL, "");
-	const data = (await (await fetch(assetsBase + "/emoji/emoji.json")).json().catch(() => void 0)) as Emoji[];
+	const data = (await (await fetch(assetsBase + "/emoji/emoji.json").catch(() => void 0))
+		?.json()
+		.catch(() => void 0)) as Emoji[];
+	if (!data) return [];
 
 	for (const e of data) {
 		const emoji = e as Emoji;
