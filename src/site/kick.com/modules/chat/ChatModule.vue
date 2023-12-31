@@ -55,8 +55,8 @@ function handle(): void {
 		chatroomStore.$subscribe(async (_, s: ChatRoom) => {
 			if (!s.chatroom || typeof s.chatroom.id !== "number") return;
 
-			if (chan.slug !== s.currentChannelSlug) {
-				chan.active = false;
+			if (chan.xQc !== s.currentChannelXqc) {
+				chan.active = true;
 				await new Promise((r) => setTimeout(r, 250));
 				chan.active = true;
 				ok = false;
